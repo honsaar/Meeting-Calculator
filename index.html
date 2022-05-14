@@ -1,101 +1,13 @@
 <!DOCTYPE html>
-
 <html lang="en">
-
-<head>
-    <title>How much did this meeting cost?</title>
-    <link rel="stylesheet" href="https://uamediaprod.github.io/uoa-styles/assets/theme.css">
-
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,300;0,400;0,700;1,400;1,700&display=swap');
-       body {
-           margin: auto;
-           max-width: 100ch;
-           min-width: 50ch;
-           font-family: 'Arial', sans-serif;
-       }
-    </style>
-
-    <!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-M29KNL597R"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-M29KNL597R');
-</script>
-</head>
-
-<body class="adx">
-   
-    <section>
-        <h1>How much did this meeting cost?</h1>
-    </section>
-
-    <p>Input the length of the meeting, the number of people in the meeting and their HEO level, then hit calculate to find out how much the meeting cost the University.</p>
-
-
-       <label>How many HEO9 people were in the meeting?</label> <input id="bodycount-HEO9" type="number" value=0> </input> <br/><br/>
-       <label>How many HEO8 people were in the meeting?</label> <input id="bodycount-HEO8" type="number" value=0> </input> <br/><br/>
-       <label>How many HEO7 people were in the meeting?</label> <input id="bodycount-HEO7" type="number" value=0> </input> <br/><br/>
-       <label>How many HEO6 people were in the meeting?</label> <input id="bodycount-HEO6" type="number" value=0> </input> <br/><br/>
-       <label>How many HEO5 people were in the meeting?</label> <input id="bodycount-HEO5" type="number" value=0> </input> <br/><br/>
-       <label>How long did the meeting go for in minutes?</label> <input id="minutes" type="number" value=0> </input> <br/>
-       <button id="sub" class="adx-button primary" onclick="calc()">Calculate!</button>
-
-
-    <div id="result"></div>
-
-
-</body>
-
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-<script>
-   console.log("Hello World!");
-
-    var heo9 = (109077 / 1950) / 60;
-    var heo8 = (93493 / 1950) / 60;
-    var heo7 = (83105 / 1950) / 60;
-    var heo6 = (75316 / 1950) / 60;
-    var heo5 = (61808 / 1960) / 60;
-
-    var heo9Hi = (124698 / 1950) / 60;
-    var heo8Hi = (112481 / 1950) / 60;
-    var heo7Hi = (99987 / 1950) / 60;
-    var heo6Hi = (87770 / 1950) / 60;
-    var heo5Hi = (80983 / 1960) / 60;
-
-
-    function calc(){
-
-
-        var result = 0; //set default
-        var hiResult = 0; //set default for upper end of the calc
-
-
-        result += $("#bodycount-HEO9").val() * heo9;
-        result += $("#bodycount-HEO8").val() * heo8;
-        result += $("#bodycount-HEO7").val() * heo7;
-        result += $("#bodycount-HEO6").val() * heo6;
-        result += $("#bodycount-HEO5").val() * heo5;
-
-        hiResult += $("#bodycount-HEO9").val() * heo9Hi;
-        hiResult += $("#bodycount-HEO8").val() * heo8Hi;
-        hiResult += $("#bodycount-HEO7").val() * heo7Hi;
-        hiResult += $("#bodycount-HEO6").val() * heo6Hi;
-        hiResult += $("#bodycount-HEO5").val() * heo5Hi;
-
-        var time = $("#minutes").val();
-
-        if(time != 0) {
-        var total = result * time;
-        var totalHi = hiResult * time;
-        $("#result").html("<p>This meeting cost the university between approximately <strong>$" + total.toFixed(2) + " and $" + totalHi.toFixed(2) + "</strong></p>");
-        }
-    }
-
-</script>
-
-</html></script>
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vite App</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
