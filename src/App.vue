@@ -98,7 +98,7 @@ function removePerson(idx: number){
 function payscaleImage(payscale){
   //return image from src/assets
   let img = payscale == 'custom' ?  payscale : payscale.name.toLowerCase()
-  return `/${img}.svg`
+  return `./${img}.svg`
 }
 
 function startMeeting(){
