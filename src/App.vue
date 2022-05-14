@@ -155,8 +155,8 @@ function calculate(){
   let totalSeconds = (Number(timerhours) * 3600) + (Number(timerminutes) * 60) + Number(timerseconds)
 
 
-  //total seconds in a year
-  let hoursInYear = 365 * 24
+  //total seconds in a year (250 working days, 7.5 working hours per day)
+  let hoursInYear = 250 * 7.5
   let minutesInYear = hoursInYear * 60
   let secondsInYear = minutesInYear * 60
 
@@ -170,6 +170,7 @@ function calculate(){
     totalMin += person.payscale.min
     totalMax += person.payscale.max
   })
+  
 
   // convert annual pay to per second
   let minSeconds = (totalMin / secondsInYear) * totalSeconds
