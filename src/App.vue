@@ -61,9 +61,16 @@ let [milliseconds,seconds,minutes,hours] = [0,0,0,0];
 let costSoFar = ref([])
 let meetingStarted = ref(false)
 
+// timeslot biz
+
+let timeSlot = ref("00:00:00")
+let calculated = ref(false)
+let msg = ref('')
 
 
+function calculateSlot(){
 
+}
 
 function addPerson(){
   let newPerson
@@ -142,16 +149,39 @@ function displayTimer() {
   })}`
 
   // get ongoing updates of the cost of the meeting
-  let cost = calculate()
+  let cost = calculate(timer)
   costSoFar.value = [cost[0], cost[1]]
 
 
 }
 
-function calculate(){
-  //get hours, minutes and seconds
+function calcSlot(){
+  if(meetingPeeps.value.length > 0) {
+    calculated.value = true
+    let slot = calculate(timeSlot)
+    console.log(slot)
+    msg.value = calcToString(slot)
+  } else {
+    alert("You need to add people to the meeting before you can calculate!")
+  }
 
-  let [timerhours, timerminutes, timerseconds] = timer.value.split(":")
+}
+
+function calcToString(calculation){
+  return `Your meeting cost between \$${calculation[0]} and \$${calculation[1]}!`
+}
+
+function calculate(source: any){
+  //get hours, minutes and seconds
+  let src;
+  if(source.value){
+    src = source.value
+  } else {
+    src = source
+  }
+
+
+  let [timerhours, timerminutes, timerseconds] = src.split(":")
   let totalSeconds = (Number(timerhours) * 3600) + (Number(timerminutes) * 60) + Number(timerseconds)
 
 
@@ -170,7 +200,7 @@ function calculate(){
     totalMin += person.payscale.min
     totalMax += person.payscale.max
   })
-  
+
 
   // convert annual pay to per second
   let minSeconds = (totalMin / secondsInYear) * totalSeconds
@@ -197,7 +227,7 @@ function endMeeting(){
   hours = 0
 
   //calculate cost, show modal, etc
-calculate();
+  calculate(timer);
 
   timer.value = `${hours.toLocaleString('en-US', {
     minimumIntegerDigits: 2
@@ -229,6 +259,16 @@ calculate();
       <button class="primary-butt" @click="startMeeting" v-if="!meetingStarted" :disabled="meetingStarted">Start meeting</button>
       <button class="primary-butt-ghost" v-if="meetingStarted" @click="pauseMeeting" :disabled="!meetingStarted">Pause timer</button>
       <button class="primary-butt" @click="endMeeting" :disabled="!meetingStarted">End meeting</button>
+
+      <h2 class="text-2xl font-bold">
+        Or, calculate your time slot:
+      </h2>
+
+      <p class="my-4"><small>Enter the time your meeting went for and hit 'enter'</small></p>
+      <input type="text" class="w-1/4 mx-auto border border-gray-200 text-gray-700 py-2 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-gray-500 text-center" v-model="timeSlot" @keyup.enter="calcSlot()" placeholder="00:00:00">
+      <div v-if="calculated" class="shadow rounded w-full my-2 p-4 text-center timer transition-all duration-300 ease-in-out hover:shadow-lg">
+      <p  class="text-gray-600 font-bold">{{ msg }}</p>
+      </div>
     </div>
 
 
