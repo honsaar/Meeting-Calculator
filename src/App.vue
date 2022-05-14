@@ -58,7 +58,7 @@ let presets = [{
 let timer = ref("00:00:00")
 let interval = ref()
 let [milliseconds,seconds,minutes,hours] = [0,0,0,0];
-let costSoFar = ref([0.00, 0.00])
+let costSoFar = ref([])
 let meetingStarted = ref(false)
 
 
@@ -152,7 +152,7 @@ function calculate(){
   //get hours, minutes and seconds
 
   let [timerhours, timerminutes, timerseconds] = timer.value.split(":")
-  let totalSeconds = (parseInt(timerhours * 3600)) + (parseInt(timerminutes * 60)) + parseInt(timerseconds)
+  let totalSeconds = (Number(timerhours) * 3600) + (Number(timerminutes) * 60) + Number(timerseconds)
 
 
   //total seconds in a year
