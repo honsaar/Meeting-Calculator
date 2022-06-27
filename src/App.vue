@@ -159,7 +159,7 @@ function calcSlot(){
   if(meetingPeeps.value.length > 0) {
     calculated.value = true
     let slot = calculate(timeSlot)
-    console.log(slot)
+
     msg.value = calcToString(slot)
   } else {
     alert("You need to add people to the meeting before you can calculate!")
@@ -181,6 +181,8 @@ function calculate(source: any){
   }
 
 
+
+
   let [timerhours, timerminutes, timerseconds] = src.split(":")
   let totalSeconds = (Number(timerhours) * 3600) + (Number(timerminutes) * 60) + Number(timerseconds)
 
@@ -200,6 +202,8 @@ function calculate(source: any){
     totalMin += person.payscale.min
     totalMax += person.payscale.max
   })
+
+
 
 
   // convert annual pay to per second
@@ -317,8 +321,15 @@ function endMeeting(){
 
           </select>
 
-          <div class="flex" v-else>
-            <input class="w-full border border-gray-200 font-bold text-sm py-2 text-emerald-600 pr-8 rounded" placeholder="minimum pay rate" v-model="person.payscale.min"/> - <input class="w-full border border-gray-200 font-bold text-sm py-2 text-emerald-600 pr-8 rounded" placeholder="maximum pay rate" v-model="person.payscale.max"/>
+          <div v-else>
+            <div class="w-full"><p><label>Title</label></p>
+              <p><input class="w-full border border-gray-200 font-bold text-sm py-2"></p></div>
+            <div>
+
+              <div class="flex my-4">
+            <input class="w-full border border-gray-200 font-bold text-sm py-2 text-emerald-600 pr-8 rounded" placeholder="minimum pay rate" type="number" v-model="person.payscale.min"/> - <input class="w-full border border-gray-200 font-bold text-sm py-2 text-emerald-600 pr-8 rounded" placeholder="maximum pay rate" type="number" v-model="person.payscale.max"/>
+              </div>
+            </div>
           </div>
 
           <p class="text-center font-bold text-sm py-2 text-emerald-600"> <span v-if="person.payscale && chosen != 'custom'">{{ person.payscale.min.toLocaleString() }} - {{ person.payscale.max.toLocaleString() }} </span></p>
