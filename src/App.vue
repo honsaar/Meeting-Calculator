@@ -1,400 +1,158 @@
 <script setup lang="ts">
-import {ref, watch} from "vue";
+import { ref, computed } from 'vue'
+import { Clock, Calculator } from 'lucide-vue-next'
+import { useTimer } from './composables/useTimer'
+import { useCost } from './composables/useCost'
+import type { Participant } from './composables/useCost'
+import ParticipantList from './components/ParticipantList.vue'
+import TimerPanel from './components/TimerPanel.vue'
+import ReflectivePanel from './components/ReflectivePanel.vue'
 
-// people variables
+const activeTab = ref<'live' | 'reflective'>('live')
+const participants = ref<Participant[]>([])
 
-let meetingPeeps = ref([])
-let chosen = ref()
+// Timer Logic
+const { display, totalSeconds, isRunning, start, pause, reset: resetTimer } = useTimer()
+const { totalMinCost, totalMaxCost, totalMinCostPerSecond, totalMaxCostPerSecond } = useCost(participants, totalSeconds)
 
-//watch chosen and clear meeting peeps if it changes
-watch(chosen, () => {
-  meetingPeeps.value = []
-})
+const hasParticipants = computed(() => participants.value.length > 0)
 
-let presets = [{
-  "name": "The University of Adelaide",
-  "payscales": [
-    {
-      "name": "HEO4",
-      "min": 64961,
-      "max": 71203,
-    },
-    {
-      "name": "HEO5",
-      "min": 72832,
-      "max": 80983,
-    },
-    {
-      "name": "HEO6",
-      "min": 81254,
-      "max": 87770,
-    },
-    {
-      "name": "HEO7",
-      "min": 89399,
-      "max": 99987,
-    },
-    {
-      "name": "HEO8",
-      "min": 100261,
-      "max": 112481,
-    },
-    {
-      "name": "HEO9",
-      "min": 116557,
-      "max": 124698,
-    },
-    {
-      "name": "HEO10",
-      "min": 123731,
-      "max": 137201,
-    },
-  ]
-}]
+// Summary Logic
+const showSummary = ref(false)
+const summaryCostMin = ref(0)
+const summaryCostMax = ref(0)
+const summaryDuration = ref('')
 
-
-// timer variables
-
-let timer = ref("00:00:00")
-let interval = ref()
-let [milliseconds,seconds,minutes,hours] = [0,0,0,0];
-let costSoFar = ref([])
-let meetingStarted = ref(false)
-
-// timeslot biz
-
-let timeSlot = ref("00:00:00")
-let calculated = ref(false)
-let msg = ref('')
-
-
-function calculateSlot(){
-
+function handleEnd() {
+  pause()
+  summaryCostMin.value = totalMinCost.value
+  summaryCostMax.value = totalMaxCost.value
+  summaryDuration.value = display.value
+  showSummary.value = true
 }
 
-function addPerson(){
-  let newPerson
-  if(chosen.value) {
-    if(chosen.value != 'custom'){
-      newPerson = {
-        "name":"",
-        "payscale": ''
-      }
-    } else {
-      newPerson = {
-        "name":"",
-        "payscale": {
-          min: 0,
-          max: 0
-        }
-      }
-    }
+function handleReset() {
+  resetTimer()
+  showSummary.value = false
+  summaryCostMin.value = 0
+  summaryCostMax.value = 0
+}
 
-    meetingPeeps.value.push(newPerson)
-
-  } else {
-    alert("You need to choose a preset or 'custom' before you add people")
+function handleStart() {
+  if (showSummary.value) {
+    // If starting a new session after summary
+    handleReset()
   }
-
+  start()
 }
-
-function removePerson(idx: number){
-  meetingPeeps.value.splice(idx, 1)
-}
-
-function payscaleImage(payscale){
-  //return image from src/assets
-  let img = payscale == 'custom' ?  payscale : payscale.name.toLowerCase()
-  return `./${img}.svg`
-}
-
-function startMeeting(){
-  if(meetingPeeps.value.length > 0) {
-    meetingStarted.value = true
-    interval.value = setInterval(displayTimer,10);
-  } else {
-    alert("You need to add people to the meeting before you can start it")
-  }
-
-
-
-}
-
-function displayTimer() {
-  milliseconds+=10;
-
-  if(milliseconds == 1000){
-    milliseconds = 0;
-    seconds++;
-
-    if(seconds == 60){
-      seconds = 0;
-      minutes++;
-
-      if(minutes == 60){
-        minutes = 0;
-        hours++;
-      }
-    }
-  }
-
-
-
-  timer.value = `${hours.toLocaleString('en-US', {
-    minimumIntegerDigits: 2
-  })}:${minutes.toLocaleString('en-US', {
-    minimumIntegerDigits: 2
-  })}:${seconds.toLocaleString('en-US', {
-    minimumIntegerDigits: 2
-  })}`
-
-  // get ongoing updates of the cost of the meeting
-  let cost = calculate(timer)
-  costSoFar.value = [cost[0], cost[1]]
-
-
-}
-
-function calcSlot(){
-  if(meetingPeeps.value.length > 0) {
-    calculated.value = true
-    let slot = calculate(timeSlot)
-
-    msg.value = calcToString(slot)
-  } else {
-    alert("You need to add people to the meeting before you can calculate!")
-  }
-
-}
-
-function calcToString(calculation){
-  return `Your meeting cost between \$${calculation[0]} and \$${calculation[1]}!`
-}
-
-function calculate(source: any){
-  //get hours, minutes and seconds
-  let src;
-  if(source.value){
-    src = source.value
-  } else {
-    src = source
-  }
-
-
-
-
-  let [timerhours, timerminutes, timerseconds] = src.split(":")
-  let totalSeconds = (Number(timerhours) * 3600) + (Number(timerminutes) * 60) + Number(timerseconds)
-
-
-  //total seconds in a year (250 working days, 7.5 working hours per day)
-  let hoursInYear = 250 * 7.5
-  let minutesInYear = hoursInYear * 60
-  let secondsInYear = minutesInYear * 60
-
-  //get total annual income
-  let totalMin = 0;
-  let totalMax = 0;
-
-  //loop through meetingPeeps
-  meetingPeeps.value.forEach(person => {
-    //add income to total
-    totalMin += person.payscale.min
-    totalMax += person.payscale.max
-  })
-
-
-
-
-  // convert annual pay to per second
-  let minSeconds = (totalMin / secondsInYear) * totalSeconds
-  let maxSeconds = (totalMax / secondsInYear) * totalSeconds
-
-
-  return [minSeconds.toFixed(2), maxSeconds.toFixed(2)]
-
-
-
-}
-
-function pauseMeeting(){
-  meetingStarted.value = false
-  clearInterval(interval.value)
-}
-
-function endMeeting(){
-  meetingStarted.value = false
-  clearInterval(interval.value)
-  milliseconds = 0
-  seconds = 0
-  minutes = 0
-  hours = 0
-
-  //calculate cost, show modal, etc
-  calculate(timer);
-
-  timer.value = `${hours.toLocaleString('en-US', {
-    minimumIntegerDigits: 2
-  })}:${minutes.toLocaleString('en-US', {
-    minimumIntegerDigits: 2
-  })}:${seconds.toLocaleString('en-US', {
-    minimumIntegerDigits: 2
-  })}`
-
-}
-
 
 </script>
 
 <template>
-  <div class="container mx-auto">
-    <h1 class="text-3xl font-bold">
-      Meeting Calculator
-    </h1>
-  <br/>
-
-    <div class="shadow rounded w-full my-10 p-4 text-center timer transition-all duration-300 ease-in-out hover:shadow-lg">
-      <p class="font-bold text-8xl text-gray-400">
-        {{ timer }}
-      </p>
-      <p class="font-bold text-sm text-indigo-300">
-        ${{ costSoFar[0] }} - ${{ costSoFar[1] }}
-      </p>
-      <button class="primary-butt" @click="startMeeting" v-if="!meetingStarted" :disabled="meetingStarted">Start meeting</button>
-      <button class="primary-butt-ghost" v-if="meetingStarted" @click="pauseMeeting" :disabled="!meetingStarted">Pause timer</button>
-      <button class="primary-butt" @click="endMeeting" :disabled="!meetingStarted">End meeting</button>
-
-      <h2 class="text-2xl font-bold">
-        Or, calculate your time slot:
-      </h2>
-
-      <p class="my-4"><small>Enter the time your meeting went for and hit 'enter'</small></p>
-      <input type="text" class="w-1/4 mx-auto border border-gray-200 text-gray-700 py-2 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-gray-500 text-center" v-model="timeSlot" @keyup.enter="calcSlot()" placeholder="00:00:00">
-      <div v-if="calculated" class="shadow rounded w-full my-2 p-4 text-center timer transition-all duration-300 ease-in-out hover:shadow-lg">
-      <p  class="text-gray-600 font-bold">{{ msg }}</p>
-      </div>
-    </div>
-
-
-
-    <h2 class="text-2xl font-bold">Your organisation</h2>
-
-
-      <select v-model="chosen" class=" border border-gray-200 text-gray-700 py-3 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-gray-500">
-        <option disabled selected>Choose a preset</option>
-        <option value="custom"> Custom </option>
-        <option v-for="preset in presets" :value="preset">{{preset.name}}</option>
-
-      </select> <button class="primary-butt-ghost" @click="addPerson">Add person</button>
-
-
-
-
-<!--  extra handling for 'custom' choice -->
-
-
-
-    <div class="flex flex-wrap justify-center">
-
-      <div class="shadow-md p-4 m-2 transition-all duration-300 ease-in-out hover:shadow-lg" v-for="(person,index) in meetingPeeps">
-        <button class="secondary-butt" @click="removePerson(index)">Remove</button>
-
-        <div class="h-20">
-          <div v-if="chosen == 'custom'" class="m-auto max-h-20">
-            <img :src="payscaleImage('custom')" width="100" height="100" class="m-auto max-h-20" alt=""/>
+  <div class="min-h-screen bg-background font-sans antialiased text-foreground selection:bg-accent selection:text-accent-foreground pb-20">
+    
+    <!-- Header -->
+    <header class="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
+      <div class="container max-w-3xl mx-auto px-4 h-16 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center font-bold font-mono">
+            $
           </div>
-
-        <img v-else-if="person.payscale && chosen != 'custom'" :src="payscaleImage(person.payscale)" width="100" height="100" class="m-auto max-h-20" alt=""/>
-
-
-
-
-
+          <h1 class="font-semibold tracking-tight text-lg">Meeting Calculator</h1>
         </div>
+        <div class="px-2 py-1 rounded-md bg-secondary text-secondary-foreground text-xs font-medium border border-border">
+          AU Salary Scales
+        </div>
+      </div>
+    </header>
 
-        <div class="inline-block relative w-64">
+    <main class="container max-w-3xl mx-auto px-4 py-8 space-y-8">
+      
+      <!-- Mode Toggle -->
+      <div class="flex justify-center">
+        <div class="inline-flex items-center rounded-full border border-border bg-card p-1 shadow-sm">
+          <button
+            @click="activeTab = 'live'"
+            class="flex items-center gap-2 px-6 py-2 rounded-full text-sm font-medium transition-all duration-200"
+            :class="activeTab === 'live' ? 'bg-accent text-accent-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'"
+          >
+            <Clock class="w-4 h-4" />
+            Live Timer
+          </button>
+          <button
+            @click="activeTab = 'reflective'"
+            class="flex items-center gap-2 px-6 py-2 rounded-full text-sm font-medium transition-all duration-200"
+            :class="activeTab === 'reflective' ? 'bg-accent text-accent-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'"
+          >
+            <Calculator class="w-4 h-4" />
+            Reflective
+          </button>
+        </div>
+      </div>
 
+      <!-- Main Panel -->
+      <div class="relative">
+        <Transition
+          mode="out-in"
+          enter-active-class="transition duration-200 ease-out"
+          enter-from-class="opacity-0 scale-95"
+          enter-to-class="opacity-100 scale-100"
+          leave-active-class="transition duration-150 ease-in"
+          leave-from-class="opacity-100 scale-100"
+          leave-to-class="opacity-0 scale-95"
+        >
+          <div v-if="activeTab === 'live'" key="live">
+            <div class="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
+              <TimerPanel
+                :time-display="display"
+                :total-min-cost="totalMinCost"
+                :total-max-cost="totalMaxCost"
+                :min-cost-per-second="totalMinCostPerSecond"
+                :max-cost-per-second="totalMaxCostPerSecond"
+                :is-running="isRunning"
+                :has-participants="hasParticipants"
+                @start="handleStart"
+                @pause="pause"
+                @reset="handleEnd"
+              />
 
-          <select v-if="chosen != 'custom'" v-model="person.payscale" class="w-full bg-gray-200 border border-gray-200 text-gray-700 py-3 px-4 pr-8 rounded">
-
-            <option v-for="payscale in chosen.payscales" :value="payscale">{{payscale.name}}</option>
-
-          </select>
-
-          <div v-else>
-            <div class="w-full"><p><label>Title</label></p>
-              <p><input class="w-full border border-gray-200 font-bold text-sm py-2"></p></div>
-            <div>
-
-              <div class="flex my-4">
-            <input class="w-full border border-gray-200 font-bold text-sm py-2 text-emerald-600 pr-8 rounded" placeholder="minimum pay rate" type="number" v-model="person.payscale.min"/> - <input class="w-full border border-gray-200 font-bold text-sm py-2 text-emerald-600 pr-8 rounded" placeholder="maximum pay rate" type="number" v-model="person.payscale.max"/>
+              <!-- Meeting Summary (only shown when ended) -->
+              <div v-if="showSummary" class="border-t border-border bg-secondary/30 p-6 animate-in slide-in-from-top-4">
+                <div class="flex items-center justify-between mb-4">
+                  <h3 class="text-lg font-semibold">Meeting Summary</h3>
+                  <button @click="handleReset" class="text-sm text-muted-foreground hover:text-destructive transition-colors">
+                    Dismiss & Reset
+                  </button>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                  <div class="p-4 bg-background rounded-lg border border-border">
+                    <div class="text-sm text-muted-foreground uppercase tracking-wider">Total Duration</div>
+                    <div class="text-2xl font-mono font-medium mt-1">{{ summaryDuration }}</div>
+                  </div>
+                  <div class="p-4 bg-background rounded-lg border border-border">
+                    <div class="text-sm text-muted-foreground uppercase tracking-wider">Final Cost Range</div>
+                    <div class="text-lg font-mono font-semibold text-primary mt-1 tabular-nums">
+                      {{ summaryCostMin.toLocaleString('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 2 }) }}
+                      –
+                      {{ summaryCostMax.toLocaleString('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 2 }) }}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          <p class="text-center font-bold text-sm py-2 text-emerald-600"> <span v-if="person.payscale && chosen != 'custom'">{{ person.payscale.min.toLocaleString() }} - {{ person.payscale.max.toLocaleString() }} </span></p>
-
-        </div>
-
-
-
-
+          <div v-else key="reflective">
+            <ReflectivePanel :participants="participants" />
+          </div>
+        </Transition>
       </div>
 
-    </div>
+      <!-- Participants Section -->
+      <div class="border-t border-border pt-8">
+        <ParticipantList v-model:participants="participants" />
+      </div>
 
-
-
+    </main>
   </div>
 </template>
-
-<style>
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,700;1,400;1,700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:ital,wght@0,300;0,400;0,700;1,400;1,700&display=swap');
-#app {
-  font-family: 'IBM Plex Sans', sans-serif;
-  color: #2c3e50;
-  margin-top: 60px;
-}
-
-.timer {
-  font-family: 'IBM Plex Serif', serif;
-}
-
-button {
-  font-family: 'IBM Plex Sans', sans-serif !important;
-}
-
-.primary-butt {
-  padding: .3em;
-  background: #ffb548;
-  min-width: 250px;
-  min-height: 50px;
-  margin: 1em;
-  border: 2px solid #ffb548;
-  font-weight: bold;
-}
-
-.primary-butt:disabled {
-  opacity: .5;
-}
-
-.primary-butt-ghost {
-  border: 2px solid #ffb548;
-  min-width: 250px;
-  min-height: 50px;
-  margin: 1em;
-  padding: .3em;
-  color: #ffb548;
-  font-weight: bold;
-}
-
-.secondary-butt {
-  color: #ff4848;
-  font-size: 0.8em;
-  font-weight: bold;
-}
-
-
-
-</style>
